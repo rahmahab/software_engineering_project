@@ -1,0 +1,656 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Code Display</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        pre {
+            background-color: #e0e0e0;
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 8px;
+            overflow: auto;
+        }
+        code {
+            color: #d63384;
+        }
+    </style>
+</head>
+<body>
+    <h1>Python Code Display</h1>
+<h2>main.py</h2><pre><code>import tkinter as tk
+from quiz_data import questions_and_answers
+from tkinter import messagebox, Button, TOP
+from admin_dashboard import AdminDashboard
+from player_dashboard import PlayerDashboard
+import hashlib
+
+
+
+
+def sign_in(user_type):
+  if user_type == &quot;admin&quot;:
+    AdminDashboard()
+  elif user_type == &quot;player&quot;: 
+    PlayerDashboard()
+  else:
+    messagebox.showerror(&quot;Error&quot;, &quot;Invalid input. Please try again.&quot;)
+    
+class Interface:
+  
+  def __init__(self, password):
+    self.password = password
+
+ ### def sign_in(user_type):
+ ##   if user_type == &quot;admin&quot;:
+ ##     AdminDashboard()
+ ##   elif user_type == &quot;player&quot;:
+ ##     PlayerDashboard()
+ ##   else:
+ ##     messagebox.showerror(&quot;Error&quot;, &quot;Invalid input. Please try again.&quot;)
+
+root = tk.Tk()
+root.title(&quot;Sign In Page&quot;)
+root.geometry(&quot;400x200&quot;)
+root.configure(background=&#39;light grey&#39;)
+
+label = tk.Label(root, text= &quot;Welcome to the Jeopardy Game!\nAre you a player or Administrator?&quot;, bg=&#39;light grey&#39;)
+label.pack(pady=10)
+
+admin_button = Button(root, text=&quot;Admin&quot;, command=lambda: sign_in(&quot;admin&quot;))
+admin_button.pack(pady=5, side=TOP)
+
+player_button = Button(root, text=&quot;Player&quot;, command=lambda: sign_in(&quot;player&quot;))
+player_button.pack(pady=5, side=TOP)
+
+root.mainloop()
+</code></pre><h2>admin_dashboard.py</h2><pre><code>import tkinter as tk
+from tkinter import Toplevel, Entry, Label, Button
+import hashlib
+from quiz_data import questions_and_answers
+
+class AdminDashboard:
+    def __init__(self):
+        self.question_bank = questions_and_answers
+        self.admin_window = tk.Toplevel()
+        self.admin_window.title(&quot;Administrator Dashboard&quot;)
+        self.admin_window.geometry(&quot;300x200&quot;)
+        self.admin_window.configure(background=&#39;light grey&#39;)
+        tk.Label(self.admin_window, text=&quot;Welcome to the Administrator Dashboard!&quot;, bg=&#39;light grey&#39;).pack(pady=20)
+
+
+        self.admin_login()
+
+    def admin_login(self):
+        # Implement the admin login functionality here
+        tk.Label(self.admin_window, text=&quot;Please enter username: &quot;).pack(pady=5)  
+        self.admin_username = Entry(self.admin_window)
+        self.admin_username.pack(pady=5) 
+        tk.Label(self.admin_window, text=&quot;Please enter password: &quot;).pack(pady=5)
+        self.admin_password = Entry(self.admin_window, show=&quot;*&quot;)
+        self.admin_password.pack(pady=5)
+
+        username = self.admin_username.get()
+        password = self.admin_password.get()
+
+        auth = password.encode()
+        auth_hash = hashlib.md5(auth).hexdigest()
+        with open(&quot;login_data.txt&quot;, &quot;r&quot;) as f:
+          saved_username, saved_password = f.read().split(&quot;\n&quot;)
+        f.close()
+
+        if username == saved_username and auth_hash == hashlib.md5(saved_password.encode()).hexdigest():
+          print(&quot;Logged in Successfully!&quot;)
+        else:
+          print(&quot;Login failed! \n&quot;)
+
+  
+
+    def add_question(self, category, question, answer, difficulty):
+      # Find the category in the question bank
+      for cat in self.question_bank:
+        if cat[&quot;category&quot;] == category:
+            cat[&quot;questions&quot;].append({
+                   &quot;question&quot;: question,
+                   &quot;answer&quot;: answer,
+                  &quot;difficulty&quot;: difficulty
+              })
+        print(f&quot;Added question to {category}&quot;)
+        return
+
+
+    def remove_question(self, category, question):
+    # Find the category in the question bank
+      for cat in self.question_bank:
+        if cat[&quot;category&quot;] == category:
+            # Find and remove the question from the category
+          initial_len = len(cat[&quot;questions&quot;])
+          cat[&quot;questions&quot;] = [q for q in cat[&quot;questions&quot;] if q[&quot;question&quot;] != question]
+          if len(cat[&quot;questions&quot;]) &lt; initial_len:
+            print(f&quot;Removed question from {category}&quot;)
+            return
+    print(&quot;Question or category not found.&quot;)
+      
+</code></pre><h2>player_dashboard.py</h2><pre><code>import tkinter as tk
+from tkinter import messagebox, Toplevel, Label, Button, Listbox, Scrollbar, Entry, simpledialog
+import quiz_data
+import random
+
+  
+class PlayerDashboard:
+  def __init__(self):
+
+    self.player_window = tk.Toplevel()
+    self.player_window.title(&quot;Player Dashboard&quot;)
+    self.player_window.geometry(&quot;400x400&quot;)
+    self.player_window.configure(background=&#39;light grey&#39;)
+
+    self.questions_and_answers = quiz_data.questions_and_answers
+    self.user_answer = &quot;&quot;
+    
+    self.selected_category = tk.StringVar()
+    self.selected_category.set(self.questions_and_answers[0][&quot;category&quot;])
+
+    self.question_label = None
+    self.player_name = simpledialog.askstring(&quot;Player Name&quot;, &quot;Please enter your name:&quot;, parent=self.player_window)
+    self.lives = 3
+    self.score = 0  
+    self.current_category = None
+    self.current_questions = []
+    self.current_question_index = 0
+
+    self.create_widgets()
+
+  
+  def ask_player_name(self):
+    return simpledialog.askstring(&quot;Player Name&quot;, &quot;Please enter your name:&quot;, parent=self.player_window)
+  
+  def create_widgets(self):
+    tk.Label(self.player_window, text=f&quot;Welcome, {self.player_name}!&quot;, bg=&#39;light grey&#39;).pack(pady=20)
+
+    tk.Label(self.player_window, text=&quot;Select Category:&quot;).pack(pady=5)
+    self.category_listbox = Listbox(self.player_window, selectmode=&quot;single&quot;, height=len(self.questions_and_answers))
+    self.category_listbox.pack(pady=5)
+    scrollbar = Scrollbar(self.player_window, orient=&quot;vertical&quot;, command=self.category_listbox.yview)
+    scrollbar.pack(side=&quot;right&quot;, fill=&quot;y&quot;)
+    self.category_listbox.config(yscrollcommand=scrollbar.set)
+    for category_data in self.questions_and_answers:
+      self.category_listbox.insert(tk.END, 
+                                         category_data[&quot;category&quot;])
+    self.category_listbox.bind(&#39;&lt;&lt;ListboxSelect&gt;&gt;&#39;, self.on_category_select)
+
+        # Question display
+      ##  self.question_label = tk.Label(self.player_window, text=&quot;&quot;, wraplength=380, justify=&quot;left&quot;)
+     ##   self.question_label.pack(pady=10)
+
+        # Answer entry(blank for now)
+       ## tk.Label(self.player_window, text=&quot;Enter Answer:&quot;).pack(pady=5)
+      ##  self.answer_entry = Entry(self.player_window)
+    ##    self.answer_entry.pack(pady=5)
+
+        # Submit answer button
+    confirm_category_button = Button(self.player_window, text=&quot;Confirm Category&quot;, command=self.confirm_category)
+    confirm_category_button.pack(pady=10)
+
+        
+    tk.Label(self.player_window, text=&quot;Lives Remaining:&quot;).pack()
+    self.lives_label = tk.Label(self.player_window, text=str(self.lives))
+    self.lives_label.pack()
+
+     
+
+  
+
+  
+
+
+
+  def check_answer(self, answer_entry):
+    user_answer = answer_entry.get().strip().lower()
+    if self.correct_answer.lower() == user_answer:
+      self.score += self.current_difficulty
+      messagebox.showinfo(&quot;Correct&quot;, f&quot;Your answer is correct! +{self.current_difficulty} points&quot;)
+      PlayerDashboard()
+    else:
+      self.lives -= 1
+      messagebox.showerror(&quot;Incorrect&quot;, &quot;Your answer is incorrect!&quot;)
+      PlayerDashboard()
+    
+    
+    if self.lives == 0:
+      messagebox.showinfo(&quot;Game Over&quot;, f&quot;Game Over! Your score is {self.score}&quot;)
+      self.player_window.destroy()
+
+    
+
+  def on_category_select(self, event):
+    selected_index = self.category_listbox.curselection()
+    if selected_index:
+        selected_category =  self.questions_and_answers[selected_index[0]][&quot;category&quot;]
+        self.selected_category.set(selected_category)
+      
+  def get_question_by_difficulty(self, difficulty):
+    selected_category = self.selected_category.get()
+    
+    matching_questions = [q for category in self.questions_and_answers
+                          if category[&quot;category&quot;] == selected_category
+                          for q in category[&quot;questions&quot;] if q[&quot;difficulty&quot;] == difficulty]
+
+    if matching_questions:
+        question = random.choice(matching_questions)
+        correct_answer = question[&quot;answer&quot;]
+        return question, correct_answer
+
+    return &quot;No question available for this difficulty in the selected category.&quot;
+
+  def display_question_diff(self, difficulty, label):
+    self.current_difficulty = int(difficulty)
+    question_info, correct_answer = self.get_question_by_difficulty(difficulty)
+    self.correct_answer = correct_answer
+    
+
+    top = tk.Toplevel()
+    top.title(&quot;Question&quot;)
+    top.geometry(&quot;400x400&quot;)
+    
+    label = tk.Label(top, text=question_info[&quot;question&quot;], wraplength=380, justify=&quot;left&quot;)
+    label.pack(pady=10)
+    label.config(text=question_info[&quot;question&quot;])
+
+    final_answer = Label(top, text = &quot;Final Answer: &quot;).place(x = 40, y = 60)
+    answer_entry = tk.Entry(top, width = 30)
+    answer_entry.place(x = 122, y = 60)
+
+    
+    
+    
+
+    submit_button = tk.Button(top, text=&quot;Submit Answer&quot;, command=lambda: self.check_answer(answer_entry))
+    submit_button.pack(pady=70)
+
+                            
+ 
+    
+      
+
+    
+    
+      
+  
+
+    
+    
+
+ 
+    
+
+  
+  def confirm_category(self):
+    top = tk.Toplevel()
+    top.title(&quot;Choose Your Difficulty&quot;)
+    top.geometry(&quot;400x250&quot;)
+    top.configure(background=&#39;light grey&#39;)
+
+    difficulties = [&quot;100&quot;, &quot;200&quot;, &quot;300&quot;, &quot;400&quot;, &quot;500&quot;]
+    
+    for difficulty in difficulties:
+      button = tk.Button(top, text=f&quot;{difficulty} points&quot;, command=lambda d=difficulty: self.display_question_diff(d, self.question_label))  # 
+      button.pack(pady=10)  # Add some vertical padding between buttons
+
+
+
+
+</code></pre><h2>quiz_data.py</h2><pre><code>questions_and_answers = [
+  
+      {
+        &quot;category&quot;: &quot;Sports&quot;,
+        &quot;questions&quot;: [
+              {
+                &quot;question&quot;: &quot;Which country won the FIFA World Cup in 2018?&quot;,
+                  &quot;answer&quot;: &quot;France&quot;,
+                  &quot;difficulty&quot;: &quot;200&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;Who holds the record for the fastest 100-meter sprint?&quot;,
+                  &quot;answer&quot;: &quot;Usain Bolt&quot;,
+                  &quot;difficulty&quot;: &quot;100&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;Which sport is played at Wimbledon?&quot;,
+                  &quot;answer&quot;: &quot;Tennis&quot;,
+                  &quot;difficulty&quot;: &quot;200&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;Which team won the first ever Super Bowl?&quot;,
+                  &quot;answer&quot;: &quot;Green Bay Packers&quot;,
+                  &quot;difficulty&quot;: &quot;300&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;Who won the 2020 NBA Championship?&quot;,
+                  &quot;answer&quot;: &quot;Los Angeles Lakers&quot;,
+                  &quot;difficulty&quot;: &quot;200&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;Which country has won the most Olympic gold medals?&quot;,
+                  &quot;answer&quot;: &quot;United States&quot;,
+                  &quot;difficulty&quot;: &quot;200&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;Who is the all-time leading scorer in the NHL?&quot;,
+                  &quot;answer&quot;: &quot;Wayne Gretzky&quot;,
+                  &quot;difficulty&quot;: &quot;200&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;Which athlete won the most gold medals in a single Olympic Games?&quot;,
+                  &quot;answer&quot;: &quot;Michael Phelps&quot;,
+                  &quot;difficulty&quot;: &quot;200&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;What is the most popular sport in Brazil?&quot;,
+                  &quot;answer&quot;: &quot;Football&quot;,
+                  &quot;difficulty&quot;: &quot;100&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;Which boxer is known as &#39;The Greatest of All Time&#39;?&quot;,
+                  &quot;answer&quot;: &quot;Muhammad Ali&quot;,
+                  &quot;difficulty&quot;: &quot;100&quot;
+              }
+          ]
+      },
+      {
+          &quot;category&quot;: &quot;Music Category&quot;,
+          &quot;questions&quot;: [
+              {
+                  &quot;question&quot;: &quot;Who is known as the &#39;Queen of Pop&#39;?&quot;,
+                  &quot;answer&quot;: &quot;Madonna&quot;,
+                  &quot;difficulty&quot;: &quot;200&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;Which band released the album &#39;Abbey Road&#39;?&quot;,
+                  &quot;answer&quot;: &quot;The Beatles&quot;,
+                  &quot;difficulty&quot;: &quot;200&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;Who sang the hit song &#39;Billie Jean&#39;?&quot;,
+                  &quot;answer&quot;: &quot;Michael Jackson&quot;,
+                  &quot;difficulty&quot;: &quot;100&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;What is the best-selling album of all time?&quot;,
+                  &quot;answer&quot;: &quot;Thriller&quot;,
+                  &quot;difficulty&quot;: &quot;200&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;Who wrote the song &#39;Bohemian Rhapsody&#39;?&quot;,
+                  &quot;answer&quot;: &quot;Freddie Mercury&quot;,
+                  &quot;difficulty&quot;: &quot;200&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;Which rapper&#39;s real name is Marshall Mathers?&quot;,
+                  &quot;answer&quot;: &quot;Eminem&quot;,
+                  &quot;difficulty&quot;: &quot;100&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;Who is known as the &#39;King of Rock and Roll&#39;?&quot;,
+                  &quot;answer&quot;: &quot;Elvis Presley&quot;,
+                  &quot;difficulty&quot;: &quot;200&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;Which singer&#39;s real name is Robyn Fenty?&quot;,
+                  &quot;answer&quot;: &quot;Rihanna&quot;,
+                  &quot;difficulty&quot;: &quot;100&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;What is the name of Adele&#39;s debut album?&quot;,
+                  &quot;answer&quot;: &quot;19&quot;,
+                  &quot;difficulty&quot;: &quot;200&quot;
+              },
+              {
+                  &quot;question&quot;: &quot;Which musician played the character Jack Dawson in the film &#39;Titanic&#39;?&quot;,
+                  &quot;answer&quot;: &quot;Celine Dion&quot;,
+                  &quot;difficulty&quot;: &quot;300&quot;
+              }
+          ]
+      },
+      # Continue for other categories following the same format
+  
+    {
+        &quot;category&quot;: &quot;Movies/ TV shows category&quot;,
+        &quot;questions&quot;: [
+            {
+                &quot;question&quot;: &quot;What is the highest-grossing film of all time (not adjusted for inflation)?&quot;,
+                &quot;answer&quot;: &quot;Avatar&quot;,
+                &quot;difficulty&quot;: &quot;200&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Who played the character Tony Stark in the Marvel Cinematic Universe films?&quot;,
+                &quot;answer&quot;: &quot;Robert Downey Jr.&quot;,
+                &quot;difficulty&quot;: &quot;200&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Which TV show features characters named Ross, Rachel, Chandler, Monica, Joey, and Phoebe?&quot;,
+                &quot;answer&quot;: &quot;Friends&quot;,
+                &quot;difficulty&quot;: &quot;200&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Who directed the movie &#39;The Shawshank Redemption&#39;?&quot;,
+                &quot;answer&quot;: &quot;Frank Darabont&quot;,
+                &quot;difficulty&quot;: &quot;400&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Which actress played Katniss Everdeen in &#39;The Hunger Games&#39; films?&quot;,
+                &quot;answer&quot;: &quot;Jennifer Lawrence&quot;,
+                &quot;difficulty&quot;: &quot;200&quot;
+            },
+            {
+                &quot;question&quot;: &quot;What is the name of the fictional continent in &#39;Game of Thrones&#39;?&quot;,
+                &quot;answer&quot;: &quot;Westeros&quot;,
+                &quot;difficulty&quot;: &quot;300&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Who won the Academy Award for Best Actor for his role in &#39;The Revenant&#39;?&quot;,
+                &quot;answer&quot;: &quot;Leonardo DiCaprio&quot;,
+                &quot;difficulty&quot;: &quot;200&quot;
+            },
+            {
+                &quot;question&quot;: &quot;What is the longest-running animated TV show in history?&quot;,
+                &quot;answer&quot;: &quot;The Simpsons&quot;,
+                &quot;difficulty&quot;: &quot;100&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Who played the character Walter White in the TV series &#39;Breaking Bad&#39;?&quot;,
+                &quot;answer&quot;: &quot;Bryan Cranston&quot;,
+                &quot;difficulty&quot;: &quot;300&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Which movie features a character named &#39;Forrest Gump&#39;?&quot;,
+                &quot;answer&quot;: &quot;Forrest Gump&quot;,
+                &quot;difficulty&quot;: &quot;100&quot;
+            }
+        ]
+    },
+    # Programming category
+    {
+        &quot;category&quot;: &quot;Programming&quot;,
+        &quot;questions&quot;: [
+            {
+                &quot;question&quot;: &quot;What does HTML stand for?&quot;,
+                &quot;answer&quot;: &quot;Hypertext Markup Language&quot;,
+                &quot;difficulty&quot;: &quot;200&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Which programming language is often used for artificial intelligence?&quot;,
+                &quot;answer&quot;: &quot;Python&quot;,
+                &quot;difficulty&quot;: &quot;200&quot;
+            },
+            {
+                &quot;question&quot;: &quot;What is the purpose of the &#39;if&#39; statement in programming?&quot;,
+                &quot;answer&quot;: &quot;Conditional execution&quot;,
+                &quot;difficulty&quot;: &quot;200&quot;
+            },
+            {
+                &quot;question&quot;: &quot;What is the name of the version control system developed by Linus Torvalds?&quot;,
+                &quot;answer&quot;: &quot;Git&quot;,
+                &quot;difficulty&quot;: &quot;300&quot;
+            },
+            {
+                &quot;question&quot;: &quot;What is the main function in most programming languages?&quot;,
+                &quot;answer&quot;: &quot;Entry point of the program&quot;,
+                &quot;difficulty&quot;: &quot;200&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Which programming language is primarily used for web development?&quot;,
+                &quot;answer&quot;: &quot;JavaScript&quot;,
+                &quot;difficulty&quot;: &quot;100&quot;
+            },
+            {
+                &quot;question&quot;: &quot;What does CSS stand for?&quot;,
+                &quot;answer&quot;: &quot;Cascading Style Sheets&quot;,
+                &quot;difficulty&quot;: &quot;200&quot;
+            },
+            {
+                &quot;question&quot;: &quot;What is the process of finding errors and fixing them in a program called?&quot;,
+                &quot;answer&quot;: &quot;Debugging&quot;,
+                &quot;difficulty&quot;: &quot;300&quot;
+            },
+            {
+                &quot;question&quot;: &quot;What is the term for a named block of code that performs a specific task?&quot;,
+                &quot;answer&quot;: &quot;Function&quot;,
+                &quot;difficulty&quot;: &quot;300&quot;
+            },
+            {
+                &quot;question&quot;: &quot;What is the file extension for Python files?&quot;,
+                &quot;answer&quot;: &quot;.py&quot;,
+                &quot;difficulty&quot;: &quot;200&quot;
+            }
+        ]
+    },
+
+    {
+        &quot;category&quot;: &quot;HU Knowledge&quot;,
+        &quot;questions&quot;: [
+            {
+                &quot;question&quot;: &quot;What is the mascot of Howard University?&quot;,
+                &quot;answer&quot;: &quot;Bison&quot;,
+                &quot;difficulty&quot;: &quot;100&quot;
+            },
+            {
+                &quot;question&quot;: &quot;What is the name of the tallest building on Howard University&#39;s campus?&quot;,
+                &quot;answer&quot;: &quot;Howard Center&quot;,
+                &quot;difficulty&quot;: &quot;300&quot;
+            },
+            {
+                &quot;question&quot;: &quot;In which city is Howard University located?&quot;,
+                &quot;answer&quot;: &quot;Washington, D.C.&quot;,
+                &quot;difficulty&quot;: &quot;200&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Who founded Howard University?&quot;,
+                &quot;answer&quot;: &quot;Oliver O. Howard&quot;,
+                &quot;difficulty&quot;: &quot;300&quot;
+            },
+            {
+                &quot;question&quot;: &quot;What year was Howard University founded?&quot;,
+                &quot;answer&quot;: &quot;1867&quot;,
+                &quot;difficulty&quot;: &quot;200&quot;
+            },
+            {
+                &quot;question&quot;: &quot;What is the official motto of Howard University?&quot;,
+                &quot;answer&quot;: &quot;Veritas et Utilitas&quot;,
+                &quot;difficulty&quot;: &quot;400&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Who is the Howard University School of Business named after?&quot;,
+                &quot;answer&quot;: &quot;Thurgood Marshall&quot;,
+                &quot;difficulty&quot;: &quot;300&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Which HU alumnus was the first African American Supreme Court Justice?&quot;,
+                &quot;answer&quot;: &quot;Thurgood Marshall&quot;,
+                &quot;difficulty&quot;: &quot;200&quot;
+            },
+            {
+                &quot;question&quot;: &quot;What is the name of the homecoming celebration at Howard University?&quot;,
+                &quot;answer&quot;: &quot;Yardfest&quot;,
+                &quot;difficulty&quot;: &quot;200&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Which US president delivered the commencement address at Howard University in 2016?&quot;,
+                &quot;answer&quot;: &quot;Barack Obama&quot;,
+                &quot;difficulty&quot;: &quot;200&quot;
+            }
+        ]
+    },
+    # FAANG Facts category
+    {
+        &quot;category&quot;: &quot;FAANG Facts&quot;,
+        &quot;questions&quot;: [
+            {
+                &quot;question&quot;: &quot;Which company&#39;s CEO famously said &#39;Think Different&#39;?&quot;,
+                &quot;answer&quot;: &quot;Apple&quot;,
+                &quot;difficulty&quot;: &quot;200&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Who founded Amazon?&quot;,
+                &quot;answer&quot;: &quot;Jeff Bezos&quot;,
+                &quot;difficulty&quot;: &quot;100&quot;
+            },
+            {
+                &quot;question&quot;: &quot;What was Google&#39;s original name?&quot;,
+                &quot;answer&quot;: &quot;BackRub&quot;,
+                &quot;difficulty&quot;: &quot;300&quot;
+            },
+            {
+                &quot;question&quot;: &quot;What was Facebook&#39;s original name?&quot;,
+                &quot;answer&quot;: &quot;TheFacebook&quot;,
+                &quot;difficulty&quot;: &quot;300&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Which streaming service was founded by Reed Hastings and Marc Randolph?&quot;,
+                &quot;answer&quot;: &quot;Netflix&quot;,
+                &quot;difficulty&quot;: &quot;300&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Who is the current CEO of Apple?&quot;,
+                &quot;answer&quot;: &quot;Tim Cook&quot;,
+                &quot;difficulty&quot;: &quot;100&quot;
+            },
+            {
+                &quot;question&quot;: &quot;What was the first product ever sold on Amazon?&quot;,
+                &quot;answer&quot;: &quot;A book&quot;,
+                &quot;difficulty&quot;: &quot;400&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Which FAANG company was founded by Larry Page and Sergey Brin?&quot;,
+                &quot;answer&quot;: &quot;Google&quot;,
+                &quot;difficulty&quot;: &quot;300&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Which FAANG company was founded by Mark Zuckerberg?&quot;,
+                &quot;answer&quot;: &quot;Facebook&quot;,
+                &quot;difficulty&quot;: &quot;100&quot;
+            },
+            {
+                &quot;question&quot;: &quot;Who co-founded Apple Inc. alongside Steve Jobs and Steve Wozniak?&quot;,
+                &quot;answer&quot;: &quot;Ronald Wayne&quot;,
+                &quot;difficulty&quot;: &quot;300&quot;
+            }
+        ]
+    }
+]
+
+
+
+
+
+</code></pre><h2>login_data.txt</h2><pre><code>admin1
+password1</code></pre>
+</body>
+</html>
